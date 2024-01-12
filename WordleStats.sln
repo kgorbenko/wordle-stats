@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WordleStats", "WordleStats\WordleStats.fsproj", "{4987B072-30A1-44D8-B843-18EA9CDB84C6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
