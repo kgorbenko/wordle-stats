@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WordleStats", "WordleStats\WordleStats.fsproj", "{4987B072-30A1-44D8-B843-18EA9CDB84C6}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WordleStats.DataAccess", "WordleStats.DataAccess\WordleStats.DataAccess.fsproj", "{2413C89C-59A8-49B9-9F96-0A016C698629}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WordleStats.DataAccess.Tests", "WordleStats.DataAccess.Tests\WordleStats.DataAccess.Tests.fsproj", "{FD95BCC1-4778-4679-A586-F132575BF965}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4987B072-30A1-44D8-B843-18EA9CDB84C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2413C89C-59A8-49B9-9F96-0A016C698629}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2413C89C-59A8-49B9-9F96-0A016C698629}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2413C89C-59A8-49B9-9F96-0A016C698629}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2413C89C-59A8-49B9-9F96-0A016C698629}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD95BCC1-4778-4679-A586-F132575BF965}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD95BCC1-4778-4679-A586-F132575BF965}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD95BCC1-4778-4679-A586-F132575BF965}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD95BCC1-4778-4679-A586-F132575BF965}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
