@@ -6,17 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="Migrations\V1_0_0_0__UsersAndResultsTables.sql" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <Compile Include="Common.fs" />
-        <Compile Include="UserStorage.fs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Dapper.FSharp" Version="4.7.0" />
-      <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.4" />
     </ItemGroup>
 
 </Project>
