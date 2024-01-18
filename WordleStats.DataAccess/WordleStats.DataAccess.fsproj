@@ -6,6 +6,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.300.38" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="ResultsStorage.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\WordleStats.Common\WordleStats.Common.fsproj" />
     </ItemGroup>
 
 </Project>
