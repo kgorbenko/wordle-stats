@@ -8,10 +8,16 @@
 
     <ItemGroup>
         <Content Include="appsettings.test.json" CopyToOutputDirectory="Always" />
+        <Compile Include="Common.fs" />
+        <Compile Include="DatabaseSnapshot.fs" />
+        <Compile Include="DatabaseLayer.fs" />
+        <Compile Include="TestHelper.fs" />
+        <Compile Include="ResultsStorage.fs" />
     </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
@@ -24,6 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\WordleStats.Common\WordleStats.Common.fsproj" />
         <ProjectReference Include="..\WordleStats.DataAccess\WordleStats.DataAccess.fsproj" />
     </ItemGroup>
 
