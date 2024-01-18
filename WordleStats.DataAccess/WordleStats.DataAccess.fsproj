@@ -10,6 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Include="DynamoDb.fs" />
       <Compile Include="ResultsStorage.fs" />
     </ItemGroup>
 

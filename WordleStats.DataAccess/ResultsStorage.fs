@@ -9,7 +9,7 @@ open System.Threading.Tasks
 open Amazon.DynamoDBv2
 open Amazon.DynamoDBv2.Model
 
-open WordleStats.Common.Utils
+open WordleStats.DataAccess.DynamoDb
 
 type Result = {
     User: string
@@ -39,21 +39,8 @@ module ResultsSchema =
         waffleAttributeName
     ]
 
-let getStringAttributeValue (value: string) =
-    let attributeValue = AttributeValue()
-    attributeValue.S <- value
-    attributeValue
-
-let getNumberAttributeValue (value: int) =
-    let attributeValue = AttributeValue()
-    attributeValue.N <- value.ToString(CultureInfo.InvariantCulture)
-    attributeValue
-
-let putItemRequest (tableName: string) (itemToPut: Map<string, AttributeValue>) =
-    let request = PutItemRequest()
-    request.TableName <- tableName
-    request.Item <- itemToPut |> mapToDict
-    request
+let private formatDate (dateTime: DateTimeOffset) (format: string) =
+    dateTime.ToString(format, CultureInfo.InvariantCulture)
 
 let insertResultAsync
     (result: Result)
@@ -63,7 +50,7 @@ let insertResultAsync
     task {
         let itemToInsert = Map<string, AttributeValue> [
             ResultsSchema.userAttributeName, getStringAttributeValue result.User
-            ResultsSchema.dateAttributeName, getStringAttributeValue (result.Date.Date.ToString(ResultsSchema.dateFormat, CultureInfo.InvariantCulture))
+            ResultsSchema.dateAttributeName, getStringAttributeValue (formatDate result.Date ResultsSchema.dateFormat)
 
             if result.Wordle.IsSome then
                 ResultsSchema.wordleAttributeName, getNumberAttributeValue result.Wordle.Value
