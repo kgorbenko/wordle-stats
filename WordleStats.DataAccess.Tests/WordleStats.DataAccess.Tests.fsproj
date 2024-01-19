@@ -13,6 +13,7 @@
         <Compile Include="DatabaseLayer.fs" />
         <Compile Include="TestHelper.fs" />
         <Compile Include="ResultsStorage.fs" />
+        <Compile Include="UsersStorage.fs" />
     </ItemGroup>
     
     <ItemGroup>

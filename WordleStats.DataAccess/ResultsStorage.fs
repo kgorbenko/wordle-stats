@@ -21,7 +21,7 @@ type Result = {
 
 [<RequireQualifiedAccess>]
 module ResultsSchema =
-    let tableName = "wordle"
+    let tableName = "WordleStats.Results"
 
     let userAttributeName = "User"
     let dateAttributeName = "Date"

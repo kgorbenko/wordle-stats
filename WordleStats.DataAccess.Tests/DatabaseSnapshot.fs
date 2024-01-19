@@ -2,6 +2,7 @@
 
 type Snapshot = {
     Results: Result list
+    Users: User list
 }
 
 and Result = {
@@ -12,14 +13,26 @@ and Result = {
     Waffle: string option
 }
 
+and User = {
+    Name: string
+    Token: string
+    PinCode: string
+}
+
 [<RequireQualifiedAccess>]
 module Snapshot =
 
     let create () =
-        { Results = [] }
+        { Results = []; Users = [] }
 
     let withResults (results: Result list) (snapshot: Snapshot) =
-        { Results = snapshot.Results @ results }
+        { snapshot with Results = snapshot.Results @ results }
 
     let withResult (result: Result) (snapshot: Snapshot) =
         withResults [result] snapshot
+
+    let withUsers (users: User list) (snapshot: Snapshot) =
+        { snapshot with Users = snapshot.Users @ users }
+
+    let withUser (user: User) (snapshot: Snapshot) =
+        withUsers [user] snapshot
