@@ -10,13 +10,6 @@ open Common
 open WordleStats.DataAccess.Tests.TestHelper
 open WordleStats.DataAccess.Tests.DatabaseLayer
 
-let createDateTimeOffsetFromDate (dateOnly: DateOnly): DateTimeOffset =
-    DateTimeOffset(
-        date = dateOnly,
-        time = TimeOnly(0, 0),
-        offset = TimeSpan.Zero
-    )
-
 [<Test>]
 let ``Creates result`` () =
     task {
@@ -27,7 +20,7 @@ let ``Creates result`` () =
 
         let result: Result = {
             User = user
-            Date = createDateTimeOffsetFromDate date
+            Date = date
             Wordle = Some 1
             Worldle = Some 2
             Waffle = Some 3
@@ -60,7 +53,7 @@ let ``Creates result without Wordle score`` () =
 
         let result: Result = {
             User = user
-            Date = createDateTimeOffsetFromDate date
+            Date = date
             Wordle = None
             Worldle = Some 2
             Waffle = Some 3
@@ -93,7 +86,7 @@ let ``Creates result without Worldle score`` () =
 
         let result: Result = {
             User = user
-            Date = createDateTimeOffsetFromDate date
+            Date = date
             Wordle = Some 1
             Worldle = None
             Waffle = Some 3
@@ -126,7 +119,7 @@ let ``Creates result without Waffle score`` () =
 
         let result: Result = {
             User = user
-            Date = createDateTimeOffsetFromDate date
+            Date = date
             Wordle = Some 1
             Worldle = Some 2
             Waffle = None

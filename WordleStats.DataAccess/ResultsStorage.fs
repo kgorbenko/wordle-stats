@@ -12,7 +12,7 @@ open WordleStats.DataAccess.DynamoDb
 
 type Result = {
     User: string
-    Date: DateTimeOffset
+    Date: DateOnly
     Wordle: int option
     Worldle: int option
     Waffle: int option
@@ -38,11 +38,11 @@ module ResultsSchema =
         waffleAttributeName
     ]
 
-let private formatDate (dateTime: DateTimeOffset) (format: string) =
+let private formatDate (format: string) (dateTime: DateOnly) =
     dateTime.ToString(format, CultureInfo.InvariantCulture)
 
 let private parseDate (format: string) (value: string) =
-    DateTimeOffset.ParseExact(value, format, CultureInfo.InvariantCulture)
+    DateOnly.ParseExact(value, format, CultureInfo.InvariantCulture)
 
 let private attributesValuesToResult (attributes: Map<string, AttributeValue>): Result =
     {
@@ -56,7 +56,7 @@ let private attributesValuesToResult (attributes: Map<string, AttributeValue>): 
 let private attributeValuesFromResult (result: Result): Map<string, AttributeValue> =
     Map [
         ResultsSchema.userAttributeName, getStringAttributeValue result.User
-        ResultsSchema.dateAttributeName, getStringAttributeValue (formatDate result.Date ResultsSchema.dateFormat)
+        ResultsSchema.dateAttributeName, result.Date |> formatDate ResultsSchema.dateFormat |> getStringAttributeValue
 
         if result.Wordle.IsSome then
             ResultsSchema.wordleAttributeName, getNumberAttributeValue result.Wordle.Value
