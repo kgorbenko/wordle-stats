@@ -25,6 +25,9 @@ let readStringAttribute (attributes: Map<string, AttributeValue>) (attributeName
 let readNumberAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
     attributes |> Map.find attributeName |> (_.N >> Int32.Parse)
 
+let readOptionNumberAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
+    attributes |> Map.tryFind attributeName |> Option.map (_.N >> Int32.Parse)
+
 let putItemRequest (tableName: string) (itemToPut: Map<string, AttributeValue>) =
     let request = PutItemRequest()
     request.TableName <- tableName

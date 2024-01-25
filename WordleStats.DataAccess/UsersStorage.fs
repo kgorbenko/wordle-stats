@@ -35,14 +35,14 @@ module UsersSchema =
         pinCodeAttributeName
     ]
 
-let attributesValuesToUser (attributes: Map<string, AttributeValue>): User =
+let private attributesValuesToUser (attributes: Map<string, AttributeValue>): User =
     {
         Name = readStringAttribute attributes UsersSchema.nameAttributeName
         Token = readStringAttribute attributes UsersSchema.tokenAttributeName
         PinCode = readNumberAttribute attributes UsersSchema.pinCodeAttributeName
     }
 
-let attributeValuesFromUser (user: User): Map<string, AttributeValue> =
+let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
     Map [
         (UsersSchema.nameAttributeName, getStringAttributeValue user.Name)
         (UsersSchema.tokenAttributeName, getStringAttributeValue user.Token)
