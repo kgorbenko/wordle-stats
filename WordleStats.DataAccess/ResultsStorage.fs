@@ -2,7 +2,6 @@
 
 open System
 open System.Globalization
-open System.Net
 open System.Threading
 open System.Threading.Tasks
 
@@ -69,7 +68,7 @@ let private attributeValuesFromResult (result: Result): Map<string, AttributeVal
             ResultsSchema.waffleAttributeName, getNumberAttributeValue result.Waffle.Value
     ]
 
-let insertResultAsync
+let rec insertResultAsync
     (result: Result)
     (cancellationToken: CancellationToken)
     (client: AmazonDynamoDBClient)
@@ -81,8 +80,7 @@ let insertResultAsync
 
         let! response = client.PutItemAsync(request, cancellationToken)
 
-        if response.HttpStatusCode <> HttpStatusCode.OK then
-            failwith (sprintf "Unable to put item %A into table %s" itemToInsert ResultsSchema.tableName)
+        response |> ensureSuccessStatusCode (nameof insertResultAsync)
 
         return ()
     }
