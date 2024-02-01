@@ -34,6 +34,23 @@ module Schemas =
 
     let createResultsTableAsync (client: AmazonDynamoDBClient): Task<unit> =
         task {
+            let getDateGlobalIndexDefinition () =
+                let keySchemas = [
+                    KeySchemaElement(ResultsSchema.dateAttributeName, KeyType.HASH)
+                    KeySchemaElement(ResultsSchema.userAttributeName, KeyType.RANGE)
+                ]
+
+                let projection = Projection()
+                projection.ProjectionType <- ProjectionType.ALL
+
+                let index = GlobalSecondaryIndex()
+                index.IndexName <- ResultsSchema.dateIndexName
+                index.KeySchema <- keySchemas |> List
+                index.Projection <- projection
+                index.ProvisionedThroughput <- ProvisionedThroughput(3, 3)
+                index
+
+
             let keySchemas = [
                 KeySchemaElement(ResultsSchema.userAttributeName, KeyType.HASH)
                 KeySchemaElement(ResultsSchema.dateAttributeName, KeyType.RANGE)
@@ -45,6 +62,7 @@ module Schemas =
             ]
 
             let request = CreateTableRequest(ResultsSchema.tableName, keySchemas |> List, attributes |> List, ProvisionedThroughput(3, 3))
+            request.GlobalSecondaryIndexes <- [getDateGlobalIndexDefinition ()] |> List
 
             let! response = client.CreateTableAsync(request)
 
@@ -65,23 +83,26 @@ let private getNumberAttributeValue (value: string) =
 let private readString (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.find attributeName |> _.S
 
-let private readOptionString (attributeName: string) (attributes: Map<string, AttributeValue>) =
+let private readNumber (attributeName: string) (attributes: Map<string, AttributeValue>) =
+    attributes |> Map.find attributeName |> _.N
+
+let private readOptionNumber (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.tryFind attributeName |> Option.map _.N
 
 let private toResult (attributes: Map<string, AttributeValue>): Result =
     {
         User = readString ResultsSchema.userAttributeName attributes
         Date = readString ResultsSchema.dateAttributeName attributes
-        Wordle = readOptionString ResultsSchema.wordleAttributeName attributes
-        Worldle = readOptionString ResultsSchema.worldleAttributeName attributes
-        Waffle = readOptionString ResultsSchema.waffleAttributeName attributes
+        Wordle = readOptionNumber ResultsSchema.wordleAttributeName attributes
+        Worldle = readOptionNumber ResultsSchema.worldleAttributeName attributes
+        Waffle = readOptionNumber ResultsSchema.waffleAttributeName attributes
     }
 
 let private toUser (attributes: Map<string, AttributeValue>): User =
     {
         Name = readString UsersSchema.nameAttributeName attributes
         Token = readString UsersSchema.tokenAttributeName attributes
-        PinCode = readString UsersSchema.pinCodeAttributeName attributes
+        PinCode = readNumber UsersSchema.pinCodeAttributeName attributes
     }
 
 let getAllResultsAsync (client: AmazonDynamoDBClient): Task<Result list> =
@@ -119,13 +140,13 @@ let insertResultsAsync (results: Result list) (client: AmazonDynamoDBClient) =
                 ResultsSchema.dateAttributeName, x.Date |> getStringAttributeValue
 
                 if x.Wordle.IsSome then
-                    ResultsSchema.wordleAttributeName, x.Wordle.Value |> getStringAttributeValue
+                    ResultsSchema.wordleAttributeName, x.Wordle.Value |> getNumberAttributeValue
 
                 if x.Worldle.IsSome then
-                    ResultsSchema.worldleAttributeName, x.Worldle.Value |> getStringAttributeValue
+                    ResultsSchema.worldleAttributeName, x.Worldle.Value |> getNumberAttributeValue
 
                 if x.Waffle.IsSome then
-                    ResultsSchema.waffleAttributeName, x.Waffle.Value |> getStringAttributeValue
+                    ResultsSchema.waffleAttributeName, x.Waffle.Value |> getNumberAttributeValue
             ])
             |> Seq.map mapToDict
             |> Seq.map (PutRequest >> WriteRequest)

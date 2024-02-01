@@ -8,6 +8,7 @@ open System.Threading.Tasks
 open Amazon.DynamoDBv2
 open Amazon.DynamoDBv2.Model
 
+open WordleStats.Common.Utils
 open WordleStats.DataAccess.DynamoDb
 
 type Result = {
@@ -16,6 +17,17 @@ type Result = {
     Wordle: int option
     Worldle: int option
     Waffle: int option
+}
+
+type ByUserSearchSpecification = {
+    User: string
+    DateTo: DateOnly
+    DateFrom: DateOnly
+}
+
+type ByDateSearchSpecification = {
+    Date: DateOnly
+    User: string option
 }
 
 [<RequireQualifiedAccess>]
@@ -27,6 +39,8 @@ module ResultsSchema =
     let wordleAttributeName = "Wordle"
     let worldleAttributeName = "Worldle"
     let waffleAttributeName = "Waffle"
+
+    let dateIndexName = "DateIndex"
 
     let dateFormat = "yyyy-MM-dd"
 
@@ -83,4 +97,84 @@ let rec insertResultAsync
         response |> ensureSuccessStatusCode (nameof insertResultAsync)
 
         return ()
+    }
+
+let rec findResultsByUserSpecificationAsync
+    (specification: ByUserSearchSpecification)
+    (cancellationToken: CancellationToken)
+    (client: AmazonDynamoDBClient)
+    : Result list Task =
+    task {
+        let keyCondition = "#User = :user and #Date between :dateFrom and :dateTo"
+        let keyAttributes = [
+            "#User", ResultsSchema.userAttributeName
+            "#Date", ResultsSchema.dateAttributeName
+        ]
+        let keyValues = [
+            ":user", specification.User |> getStringAttributeValue
+            ":dateFrom", specification.DateFrom |> formatDate ResultsSchema.dateFormat |> getStringAttributeValue
+            ":dateTo", specification.DateTo |> formatDate ResultsSchema.dateFormat |> getStringAttributeValue
+        ]
+
+        let request = QueryRequest(ResultsSchema.tableName)
+        request.KeyConditionExpression <- keyCondition
+        request.ExpressionAttributeNames <- keyAttributes |> Map |> mapToDict
+        request.ExpressionAttributeValues <- keyValues |> Map |> mapToDict
+
+        let! response = client.QueryAsync(request, cancellationToken)
+
+        response |> ensureSuccessStatusCode (nameof findResultsByUserSpecificationAsync)
+
+        return response.Items
+            |> Seq.map dictToMap
+            |> Seq.map attributesValuesToResult
+            |> List.ofSeq
+    }
+
+let rec findResultsByDateSpecificationAsync
+    (specification: ByDateSearchSpecification)
+    (cancellationToken: CancellationToken)
+    (client: AmazonDynamoDBClient)
+    : Result list Task =
+    task {
+        let userCondition, userAttribute, userValue =
+            match specification.User with
+            | None -> None, None, None
+            | Some user ->
+                let userAttribute = "#User", ResultsSchema.userAttributeName
+                let userValue = ":user", getStringAttributeValue user
+
+                Some "#User = :user", Some userAttribute, Some userValue
+
+        let request = QueryRequest(ResultsSchema.tableName)
+        request.IndexName <- ResultsSchema.dateIndexName
+        request.KeyConditionExpression <- [
+            "#Date = :date"
+
+            if userCondition.IsSome then
+                userCondition.Value
+        ] |> String.concat " and "
+
+        request.ExpressionAttributeNames <- [
+            "#Date", ResultsSchema.dateAttributeName
+
+            if userAttribute.IsSome then
+                userAttribute.Value
+        ] |> Map |> mapToDict
+
+        request.ExpressionAttributeValues <- [
+            ":date", specification.Date |> formatDate ResultsSchema.dateFormat |> getStringAttributeValue
+
+            if userValue.IsSome then
+                userValue.Value
+        ] |> Map |> mapToDict
+
+        let! response = client.QueryAsync(request, cancellationToken)
+
+        response |> ensureSuccessStatusCode (nameof findResultsByUserSpecificationAsync)
+
+        return response.Items
+            |> Seq.map dictToMap
+            |> Seq.map attributesValuesToResult
+            |> List.ofSeq
     }
