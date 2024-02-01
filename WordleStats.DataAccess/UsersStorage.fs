@@ -1,6 +1,5 @@
 ﻿module WordleStats.DataAccess.UsersStorage
 
-open System.Net
 open System.Threading
 open System.Threading.Tasks
 
@@ -13,7 +12,7 @@ open WordleStats.Common.Utils
 type User = {
     Name: string
     Token: string
-    PinCode: int
+    PinCode: int option
 }
 
 type UserSearchSpecification =
@@ -39,15 +38,8 @@ let private attributesValuesToUser (attributes: Map<string, AttributeValue>): Us
     {
         Name = readStringAttribute attributes UsersSchema.nameAttributeName
         Token = readStringAttribute attributes UsersSchema.tokenAttributeName
-        PinCode = readNumberAttribute attributes UsersSchema.pinCodeAttributeName
+        PinCode = readOptionNumberAttribute attributes UsersSchema.pinCodeAttributeName
     }
-
-let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
-    Map [
-        (UsersSchema.nameAttributeName, getStringAttributeValue user.Name)
-        (UsersSchema.tokenAttributeName, getStringAttributeValue user.Token)
-        (UsersSchema.pinCodeAttributeName, getNumberAttributeValue user.PinCode)
-    ]
 
 let rec findUserBySpecificationAsync
     (specification: UserSearchSpecification)

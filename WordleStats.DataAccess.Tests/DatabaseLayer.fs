@@ -102,7 +102,7 @@ let private toUser (attributes: Map<string, AttributeValue>): User =
     {
         Name = readString UsersSchema.nameAttributeName attributes
         Token = readString UsersSchema.tokenAttributeName attributes
-        PinCode = readNumber UsersSchema.pinCodeAttributeName attributes
+        PinCode = readOptionNumber UsersSchema.pinCodeAttributeName attributes
     }
 
 let getAllResultsAsync (client: AmazonDynamoDBClient): Task<Result list> =
@@ -166,7 +166,9 @@ let insertUsersAsync (users: User list) (client: AmazonDynamoDBClient) =
             |> Seq.map (fun x -> Map [
                 UsersSchema.nameAttributeName, x.Name |> getStringAttributeValue
                 UsersSchema.tokenAttributeName, x.Token |> getStringAttributeValue
-                UsersSchema.pinCodeAttributeName, x.PinCode |> getNumberAttributeValue
+
+                if x.PinCode.IsSome then
+                    UsersSchema.pinCodeAttributeName, x.PinCode.Value |> getNumberAttributeValue
             ])
             |> Seq.map mapToDict
             |> Seq.map (PutRequest >> WriteRequest)

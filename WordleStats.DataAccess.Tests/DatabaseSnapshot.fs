@@ -16,7 +16,7 @@ and Result = {
 and User = {
     Name: string
     Token: string
-    PinCode: string
+    PinCode: string option
 }
 
 [<RequireQualifiedAccess>]
