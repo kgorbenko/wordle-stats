@@ -41,6 +41,57 @@ let private attributesValuesToUser (attributes: Map<string, AttributeValue>): Us
         PinCode = readOptionNumberAttribute attributes UsersSchema.pinCodeAttributeName
     }
 
+let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
+    Map [
+        UsersSchema.nameAttributeName, getStringAttributeValue user.Name
+        UsersSchema.tokenAttributeName, getStringAttributeValue user.Token
+
+        if user.PinCode.IsSome then
+            UsersSchema.pinCodeAttributeName, getNumberAttributeValue user.PinCode.Value
+    ]
+let rec updateUserAsync
+    (user: User)
+    (cancellationToken: CancellationToken)
+    (client: AmazonDynamoDBClient)
+    : unit Task =
+    task {
+        let pinCodeExpression, pinCodeAttribute, pinCodeValue =
+            match user.PinCode with
+            | Some pinCode ->
+                ", #PinCode = :pinCode",
+                Some ("#PinCode", UsersSchema.pinCodeAttributeName),
+                Some (":pinCode", getNumberAttributeValue pinCode)
+            | None ->
+                "REMOVE #PinCode",
+                Some ("#PinCode", UsersSchema.pinCodeAttributeName),
+                None
+
+        let request = UpdateItemRequest()
+        request.TableName <- UsersSchema.tableName
+        request.Key <- Map [ "Name", getStringAttributeValue user.Name ] |> mapToDict
+        request.ConditionExpression <- "attribute_exists(#Name)"
+        request.UpdateExpression <- $"SET #Token = :token {pinCodeExpression}"
+        request.ExpressionAttributeNames <- Map [
+            "#Name", UsersSchema.nameAttributeName
+            "#Token", UsersSchema.tokenAttributeName
+
+            if pinCodeAttribute.IsSome then
+                pinCodeAttribute.Value
+        ] |> mapToDict
+        request.ExpressionAttributeValues <- Map [
+            ":token", getStringAttributeValue user.Token
+
+            if pinCodeValue.IsSome then
+                pinCodeValue.Value
+        ] |> mapToDict
+
+        let! response = client.UpdateItemAsync(request, cancellationToken)
+
+        response |> ensureSuccessStatusCode (nameof updateUserAsync)
+
+        return ()
+    }
+
 let rec findUserBySpecificationAsync
     (specification: UserSearchSpecification)
     (cancellationToken: CancellationToken)

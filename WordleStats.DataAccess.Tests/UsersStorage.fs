@@ -1,12 +1,14 @@
 ﻿module WordleStats.DataAccess.Tests.UsersStorage
 
+open Amazon.DynamoDBv2.Model
+
 open System.Threading
 open NUnit.Framework
 
+open Common
 open WordleStats.DataAccess
 open WordleStats.DataAccess.UsersStorage
 
-open Common
 open WordleStats.DataAccess.Tests.DatabaseSnapshot
 open WordleStats.DataAccess.Tests.TestHelper
 open WordleStats.DataAccess.Tests.DatabaseLayer
@@ -227,4 +229,96 @@ let ``Find User By Name no PinCode`` () =
             Some { Name = name; Token = token; PinCode = None }
 
         Assert.That(actual, Is.EqualTo(expected))
+    }
+
+[<Test>]
+let ``Update User`` () =
+    task {
+        do! prepareDatabaseAsync |> withTestDbClientAsync
+
+        let user: User = {
+            Name = "name"
+            Token = "token"
+            PinCode = None
+        }
+
+        let snapshot =
+            Snapshot.create ()
+            |> Snapshot.withUsers [user]
+
+        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
+
+        let newUser: UsersStorage.User = {
+            Name = user.Name
+            Token = "another token"
+            PinCode = Some 1234
+        }
+
+        do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
+
+        let! actual = getAllUsersAsync |> withTestDbClientAsync
+
+        let expected: User list = [
+            {
+                Name = "name"
+                Token = "another token"
+                PinCode = Some "1234"
+            }
+        ]
+
+        Assert.That(actual, Is.EqualTo(expected))
+    }
+
+[<Test>]
+let ``Update User removes PinCode`` () =
+    task {
+        do! prepareDatabaseAsync |> withTestDbClientAsync
+
+        let user: User = {
+            Name = "name"
+            Token = "token"
+            PinCode = Some "1234"
+        }
+
+        let snapshot =
+            Snapshot.create ()
+            |> Snapshot.withUsers [user]
+
+        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
+
+        let newUser: UsersStorage.User = {
+            Name = user.Name
+            Token = "another token"
+            PinCode = None
+        }
+
+        do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
+
+        let! actual = getAllUsersAsync |> withTestDbClientAsync
+
+        let expected: User list = [
+            {
+                Name = "name"
+                Token = "another token"
+                PinCode = None
+            }
+        ]
+
+        Assert.That(actual, Is.EqualTo(expected))
+    }
+
+[<Test>]
+let ``Update User does not create a new User`` () =
+    task {
+        do! prepareDatabaseAsync |> withTestDbClientAsync
+
+        let newUser: UsersStorage.User = {
+            Name = "test"
+            Token = "token"
+            PinCode = None
+        }
+
+        Assert.ThrowsAsync<ConditionalCheckFailedException>(
+            fun x -> task { do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync }
+        ) |> ignore
     }
