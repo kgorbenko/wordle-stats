@@ -28,7 +28,7 @@ let ``Creates result`` () =
             Waffle = Some 3
         }
 
-        do! insertResultAsync result CancellationToken.None |> withTestDbClientAsync
+        do! putResultAsync result CancellationToken.None |> withTestDbClientAsync
 
         let! actual = getAllResultsAsync |> withTestDbClientAsync
 
@@ -61,7 +61,7 @@ let ``Creates result without Wordle score`` () =
             Waffle = Some 3
         }
 
-        do! insertResultAsync result CancellationToken.None |> withTestDbClientAsync
+        do! putResultAsync result CancellationToken.None |> withTestDbClientAsync
 
         let! actual = getAllResultsAsync |> withTestDbClientAsync
 
@@ -94,7 +94,7 @@ let ``Creates result without Worldle score`` () =
             Waffle = Some 3
         }
 
-        do! insertResultAsync result CancellationToken.None |> withTestDbClientAsync
+        do! putResultAsync result CancellationToken.None |> withTestDbClientAsync
 
         let! actual = getAllResultsAsync |> withTestDbClientAsync
 
@@ -127,7 +127,7 @@ let ``Creates result without Waffle score`` () =
             Waffle = None
         }
 
-        do! insertResultAsync result CancellationToken.None |> withTestDbClientAsync
+        do! putResultAsync result CancellationToken.None |> withTestDbClientAsync
 
         let! actual = getAllResultsAsync |> withTestDbClientAsync
 
@@ -138,6 +138,52 @@ let ``Creates result without Waffle score`` () =
                 Wordle = Some "1"
                 Worldle = Some "2"
                 Waffle = None
+            }
+        ]
+
+        Assert.That(actual, Is.EqualTo(expected))
+    }
+
+[<Test>]
+let ``Should update a Results when already exists`` () =
+    task {
+        do! prepareDatabaseAsync |> withTestDbClientAsync
+
+        let user = "boris"
+        let date = "2024-01-02"
+        let result: DatabaseSnapshot.Result = {
+            User = user
+            Date = date
+            Wordle = None
+            Worldle = None
+            Waffle = None
+        }
+
+        let snapshot =
+            Snapshot.create ()
+            |> Snapshot.withResult result
+
+        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
+
+        let newResult: ResultsStorage.Result = {
+            User = user
+            Date = DateOnly(2024, 01, 02)
+            Wordle = Some 1
+            Worldle = Some 2
+            Waffle = Some 3
+        }
+
+        do! putResultAsync newResult CancellationToken.None |> withTestDbClientAsync
+
+        let! actual = getAllResultsAsync |> withTestDbClientAsync
+
+        let expected: DatabaseSnapshot.Result list = [
+            {
+                User = user
+                Date = date
+                Wordle = Some "1"
+                Worldle = Some "2"
+                Waffle = Some "3"
             }
         ]
 

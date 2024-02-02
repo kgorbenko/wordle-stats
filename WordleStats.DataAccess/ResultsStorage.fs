@@ -82,7 +82,7 @@ let private attributeValuesFromResult (result: Result): Map<string, AttributeVal
             ResultsSchema.waffleAttributeName, getNumberAttributeValue result.Waffle.Value
     ]
 
-let rec insertResultAsync
+let rec putResultAsync
     (result: Result)
     (cancellationToken: CancellationToken)
     (client: AmazonDynamoDBClient)
@@ -94,7 +94,7 @@ let rec insertResultAsync
 
         let! response = client.PutItemAsync(request, cancellationToken)
 
-        response |> ensureSuccessStatusCode (nameof insertResultAsync)
+        response |> ensureSuccessStatusCode (nameof putResultAsync)
 
         return ()
     }
