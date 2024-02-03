@@ -103,8 +103,8 @@ let private toResult (attributes: Map<string, AttributeValue>): Result =
 
 let private toUser (attributes: Map<string, AttributeValue>): User =
     {
-        Name = readString UsersSchema.nameAttributeName attributes
         Token = readString UsersSchema.tokenAttributeName attributes
+        Name = readOptionString UsersSchema.nameAttributeName attributes
         PasswordHash = readOptionString UsersSchema.passwordHashAttributeName attributes
     }
 
@@ -167,8 +167,10 @@ let insertUsersAsync (users: User list) (client: AmazonDynamoDBClient) =
         let batchWriteParameters =
             users
             |> Seq.map (fun x -> Map [
-                UsersSchema.nameAttributeName, x.Name |> getStringAttributeValue
                 UsersSchema.tokenAttributeName, x.Token |> getStringAttributeValue
+
+                if x.Name.IsSome then
+                    UsersSchema.nameAttributeName, x.Name.Value |> getStringAttributeValue
 
                 if x.PasswordHash.IsSome then
                     UsersSchema.passwordHashAttributeName, x.PasswordHash.Value |> getStringAttributeValue

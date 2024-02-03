@@ -14,8 +14,8 @@ and Result = {
 }
 
 and User = {
-    Name: string
     Token: string
+    Name: string option
     PasswordHash: string option
 }
 

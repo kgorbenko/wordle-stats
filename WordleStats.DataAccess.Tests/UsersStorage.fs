@@ -19,7 +19,7 @@ let ``Not found by Name substring`` () =
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "some user"
+            Name = Some "some user"
             Token = "some token"
             PasswordHash = None
         }
@@ -41,7 +41,7 @@ let ``Find User by Name`` () =
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "some user"
+            Name = Some "some user"
             Token = "some token"
             PasswordHash = Some "some hash"
         }
@@ -50,7 +50,7 @@ let ``Find User by Name`` () =
         let matchingUserToken = "another token"
         let matchingPasswordHash = Some "another hash"
         let matchingUser: User = {
-            Name = matchingUserName
+            Name = Some matchingUserName
             Token = matchingUserToken
             PasswordHash = matchingPasswordHash
         }
@@ -64,7 +64,7 @@ let ``Find User by Name`` () =
         let! actual = findUserBySpecificationAsync (ByName matchingUserName) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
+            Some { Name = Some matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -75,7 +75,7 @@ let ``Not found by Token substring`` () =
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "some user"
+            Name = Some "some user"
             Token = "some token"
             PasswordHash = Some "some hash"
         }
@@ -97,7 +97,7 @@ let ``Find User by Token`` () =
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "some user"
+            Name = Some "some user"
             Token = "some token"
             PasswordHash = Some "some hash"
         }
@@ -106,7 +106,7 @@ let ``Find User by Token`` () =
         let matchingUserToken = "matching token"
         let matchingPasswordHash = Some "another hash"
         let matchingUser: User = {
-            Name = matchingUserName
+            Name = Some matchingUserName
             Token = matchingUserToken
             PasswordHash = matchingPasswordHash
         }
@@ -120,7 +120,7 @@ let ``Find User by Token`` () =
         let! actual = findUserBySpecificationAsync (ByToken matchingUserToken) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
+            Some { Name = Some matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -133,7 +133,7 @@ let ``Find User By Name no Hash`` () =
         let name = "some user"
         let token = "some token"
         let user: User = {
-            Name = name
+            Name = Some name
             Token = token
             PasswordHash = None
         }
@@ -147,18 +147,18 @@ let ``Find User By Name no Hash`` () =
         let! actual = findUserBySpecificationAsync (ByName name) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = name; Token = token; PasswordHash = None }
+            Some { Name = Some name; Token = token; PasswordHash = None }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
 
 [<Test>]
-let ``Update User`` () =
+let ``Update User sets empty attributes`` () =
     task {
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "name"
+            Name = None
             Token = "token"
             PasswordHash = None
         }
@@ -169,9 +169,10 @@ let ``Update User`` () =
 
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
+        let newName = Some "some name"
         let newHash = Some "some hash"
         let newUser: UsersStorage.User = {
-            Name = "another name"
+            Name = newName
             Token = user.Token
             PasswordHash = newHash
         }
@@ -182,7 +183,7 @@ let ``Update User`` () =
 
         let expected: User list = [
             {
-                Name = "another name"
+                Name = newName
                 Token = user.Token
                 PasswordHash = newHash
             }
@@ -192,12 +193,12 @@ let ``Update User`` () =
     }
 
 [<Test>]
-let ``Update User removes Hash`` () =
+let ``Update User removes empty attributes`` () =
     task {
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
-            Name = "name"
+            Name = Some "name"
             Token = "token"
             PasswordHash = Some "some hash"
         }
@@ -209,7 +210,7 @@ let ``Update User removes Hash`` () =
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
         let newUser: UsersStorage.User = {
-            Name = "another name"
+            Name = None
             Token = user.Token
             PasswordHash = None
         }
@@ -220,7 +221,7 @@ let ``Update User removes Hash`` () =
 
         let expected: User list = [
             {
-                Name = "another name"
+                Name = None
                 Token = user.Token
                 PasswordHash = None
             }
@@ -235,7 +236,7 @@ let ``Update User does not create a new User`` () =
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let newUser: UsersStorage.User = {
-            Name = "test"
+            Name = None
             Token = "token"
             PasswordHash = None
         }
