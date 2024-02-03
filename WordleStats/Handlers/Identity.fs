@@ -20,10 +20,23 @@ type RegisterRequest = {
     Password: string
 }
 
+type LoginRequest = {
+    UserName: string
+    Password: string
+}
+
 type RegisterRequestFunc =
     Func<
         IOptions<WordleStats.DynamoDbConfiguration>,
         RegisterRequest,
+        CancellationToken,
+        Task<IResult>
+    >
+
+type LoginRequestFunc =
+    Func<
+        IOptions<WordleStats.DynamoDbConfiguration>,
+        LoginRequest,
         CancellationToken,
         Task<IResult>
     >
@@ -38,10 +51,21 @@ module private Validators =
             base.RuleFor(fun x -> x.UserName).NotEmpty().MaximumLength(32) |> ignore
             base.RuleFor(fun x -> x.Password).NotEmpty().MinimumLength(8) |> ignore
 
+    type LoginRequestValidator() =
+        inherit AbstractValidator<LoginRequest>()
+
+        do
+            base.RuleFor(fun x -> x.UserName).NotEmpty() |> ignore
+            base.RuleFor(fun x -> x.Password).NotEmpty() |> ignore
+
     let private registerRequestValidator = RegisterRequestValidator()
+    let private loginRequestValidator = LoginRequestValidator()
 
     let validateRegisterRequest (request: RegisterRequest) =
         registerRequestValidator.Validate request
+
+    let validateLoginRequest (request: LoginRequest) =
+        loginRequestValidator.Validate request
 
 let private registerAsync
     (dynamoDbConfiguration: IOptions<WordleStats.DynamoDbConfiguration>)
@@ -80,5 +104,47 @@ let private registerAsync
                 return Results.Ok(userByToken.Value.Token)
     }
 
+let private toHashedPassword (password: Password): PasswordHash.HashedPassword =
+    {
+        Hash = password.Hash
+        Salt = password.Salt
+    }
+
+let private loginAsync
+    (dynamoDbConfiguration: IOptions<WordleStats.DynamoDbConfiguration>)
+    (request: LoginRequest)
+    (cancellationToken: CancellationToken)
+    : Task<IResult> =
+    task {
+        let validationResult = Validators.validateLoginRequest request
+
+        if not validationResult.IsValid then
+            return Results.ValidationProblem(validationResult.ToDictionary())
+        else
+            let configuration = makeConfiguration dynamoDbConfiguration.Value
+
+            let! userByUsername =
+                findUserBySpecificationAsync (ByName request.UserName) cancellationToken
+                |> withDbClientAsync configuration
+
+            if userByUsername.IsNone then
+                return Results.BadRequest()
+            else
+                if userByUsername.Value.Password.IsNone then
+                    return Results.BadRequest()
+                else
+                    let currentPassword = toHashedPassword userByUsername.Value.Password.Value
+
+                    let! isPasswordCorrect = PasswordHash.verifyAsync request.Password currentPassword
+
+                    if isPasswordCorrect then
+                        return Results.Ok(userByUsername.Value.Token)
+                    else
+                        return Results.BadRequest()
+    }
+
+
 let mapIdentityApi (routeBuilder: IEndpointRouteBuilder) =
-    routeBuilder.MapPost("/register", RegisterRequestFunc(registerAsync))
+    routeBuilder.MapPost("/register", RegisterRequestFunc(registerAsync)) |> ignore
+    routeBuilder.MapPost("/login", LoginRequestFunc(loginAsync)) |> ignore
+    ()
