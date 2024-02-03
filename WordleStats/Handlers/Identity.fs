@@ -34,7 +34,7 @@ module private Validators =
         inherit AbstractValidator<RegisterRequest>()
 
         do
-            base.RuleFor(fun x -> x.Token).NotNull() |> ignore
+            base.RuleFor(fun x -> x.Token).NotEmpty() |> ignore
             base.RuleFor(fun x -> x.UserName).NotEmpty().MaximumLength(32) |> ignore
             base.RuleFor(fun x -> x.Password).NotEmpty().MinimumLength(8) |> ignore
 
