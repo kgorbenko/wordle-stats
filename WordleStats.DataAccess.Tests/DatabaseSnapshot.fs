@@ -16,7 +16,12 @@ and Result = {
 and User = {
     Token: string
     Name: string option
-    PasswordHash: string option
+    Password: Password option
+}
+
+and Password = {
+    Hash: string
+    Salt: string
 }
 
 [<RequireQualifiedAccess>]

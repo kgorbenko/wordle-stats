@@ -80,6 +80,11 @@ let private getNumberAttributeValue (value: string) =
     attribute.N <- value
     attribute
 
+let private getMapAttributeValue (value: Map<string, AttributeValue>) =
+    let attributeValue = AttributeValue()
+    attributeValue.M <- value |> mapToDict
+    attributeValue
+
 let private readString (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.find attributeName |> _.S
 
@@ -92,6 +97,9 @@ let private readNumber (attributeName: string) (attributes: Map<string, Attribut
 let private readOptionNumber (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.tryFind attributeName |> Option.map _.N
 
+let private readOptionMapAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
+    attributes |> Map.tryFind attributeName |> Option.map (_.M >> dictToMap)
+
 let private toResult (attributes: Map<string, AttributeValue>): Result =
     {
         User = readString ResultsSchema.userAttributeName attributes
@@ -101,11 +109,23 @@ let private toResult (attributes: Map<string, AttributeValue>): Result =
         Waffle = readOptionNumber ResultsSchema.waffleAttributeName attributes
     }
 
+let private toPassword (attributes: Map<string, AttributeValue>): Password =
+    {
+        Hash = readString UsersSchema.Password.hashAttributeName attributes
+        Salt = readString UsersSchema.Password.saltAttributeName attributes
+    }
+
+let private fromPassword (password: Password) =
+    Map [
+        UsersSchema.Password.hashAttributeName, password.Hash |> getStringAttributeValue
+        UsersSchema.Password.saltAttributeName, password.Salt |> getStringAttributeValue
+    ]
+
 let private toUser (attributes: Map<string, AttributeValue>): User =
     {
         Token = readString UsersSchema.tokenAttributeName attributes
         Name = readOptionString UsersSchema.nameAttributeName attributes
-        PasswordHash = readOptionString UsersSchema.passwordHashAttributeName attributes
+        Password = readOptionMapAttribute attributes UsersSchema.passwordAttributeName |> Option.map toPassword
     }
 
 let getAllResultsAsync (client: AmazonDynamoDBClient): Task<Result list> =
@@ -172,8 +192,8 @@ let insertUsersAsync (users: User list) (client: AmazonDynamoDBClient) =
                 if x.Name.IsSome then
                     UsersSchema.nameAttributeName, x.Name.Value |> getStringAttributeValue
 
-                if x.PasswordHash.IsSome then
-                    UsersSchema.passwordHashAttributeName, x.PasswordHash.Value |> getStringAttributeValue
+                if x.Password.IsSome then
+                    UsersSchema.passwordAttributeName, x.Password.Value |> fromPassword |> getMapAttributeValue
             ])
             |> Seq.map mapToDict
             |> Seq.map (PutRequest >> WriteRequest)

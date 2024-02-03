@@ -21,7 +21,7 @@ let ``Not found by Name substring`` () =
         let user: User = {
             Name = Some "some user"
             Token = "some token"
-            PasswordHash = None
+            Password = None
         }
 
         let snapshot =
@@ -43,16 +43,16 @@ let ``Find User by Name`` () =
         let user: User = {
             Name = Some "some user"
             Token = "some token"
-            PasswordHash = Some "some hash"
+            Password = Some { Hash = "hash"; Salt = "salt" }
         }
 
         let matchingUserName = "matching name"
         let matchingUserToken = "another token"
-        let matchingPasswordHash = Some "another hash"
+        let matchingPassword = Some { Hash = "another hash"; Salt = "another salt" }
         let matchingUser: User = {
             Name = Some matchingUserName
             Token = matchingUserToken
-            PasswordHash = matchingPasswordHash
+            Password = matchingPassword
         }
 
         let snapshot =
@@ -64,7 +64,14 @@ let ``Find User by Name`` () =
         let! actual = findUserBySpecificationAsync (ByName matchingUserName) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = Some matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
+            Some {
+                Name = Some matchingUserName
+                Token = matchingUserToken
+                Password = Some {
+                    Hash = matchingPassword.Value.Hash
+                    Salt = matchingPassword.Value.Salt
+                }
+            }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -77,7 +84,7 @@ let ``Not found by Token substring`` () =
         let user: User = {
             Name = Some "some user"
             Token = "some token"
-            PasswordHash = Some "some hash"
+            Password = Some { Hash = "hash"; Salt = "salt" }
         }
 
         let snapshot =
@@ -99,16 +106,16 @@ let ``Find User by Token`` () =
         let user: User = {
             Name = Some "some user"
             Token = "some token"
-            PasswordHash = Some "some hash"
+            Password = Some { Hash = "hash"; Salt = "salt" }
         }
 
         let matchingUserName = "another name"
         let matchingUserToken = "matching token"
-        let matchingPasswordHash = Some "another hash"
+        let matchingPassword = Some { Hash = "another hash"; Salt = "another salt" }
         let matchingUser: User = {
             Name = Some matchingUserName
             Token = matchingUserToken
-            PasswordHash = matchingPasswordHash
+            Password =  matchingPassword
         }
 
         let snapshot =
@@ -120,7 +127,14 @@ let ``Find User by Token`` () =
         let! actual = findUserBySpecificationAsync (ByToken matchingUserToken) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = Some matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
+            Some {
+                Name = Some matchingUserName
+                Token = matchingUserToken
+                Password = Some {
+                    Hash = matchingPassword.Value.Hash
+                    Salt = matchingPassword.Value.Salt
+                }
+            }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -135,7 +149,7 @@ let ``Find User By Name no Hash`` () =
         let user: User = {
             Name = Some name
             Token = token
-            PasswordHash = None
+            Password = None
         }
 
         let snapshot =
@@ -147,7 +161,7 @@ let ``Find User By Name no Hash`` () =
         let! actual = findUserBySpecificationAsync (ByName name) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = Some name; Token = token; PasswordHash = None }
+            Some { Name = Some name; Token = token; Password = None }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -160,7 +174,7 @@ let ``Update User sets empty attributes`` () =
         let user: User = {
             Name = None
             Token = "token"
-            PasswordHash = None
+            Password = None
         }
 
         let snapshot =
@@ -170,11 +184,11 @@ let ``Update User sets empty attributes`` () =
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
         let newName = Some "some name"
-        let newHash = Some "some hash"
+        let newPassword: UsersStorage.Password option = Some { Hash = "hash"; Salt = "salt" }
         let newUser: UsersStorage.User = {
             Name = newName
             Token = user.Token
-            PasswordHash = newHash
+            Password = newPassword
         }
 
         do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
@@ -185,7 +199,10 @@ let ``Update User sets empty attributes`` () =
             {
                 Name = newName
                 Token = user.Token
-                PasswordHash = newHash
+                Password = Some {
+                    Hash = newPassword.Value.Hash
+                    Salt = newPassword.Value.Salt
+                }
             }
         ]
 
@@ -200,7 +217,7 @@ let ``Update User removes empty attributes`` () =
         let user: User = {
             Name = Some "name"
             Token = "token"
-            PasswordHash = Some "some hash"
+            Password = Some { Hash = "hash"; Salt = "salt" }
         }
 
         let snapshot =
@@ -212,7 +229,7 @@ let ``Update User removes empty attributes`` () =
         let newUser: UsersStorage.User = {
             Name = None
             Token = user.Token
-            PasswordHash = None
+            Password = None
         }
 
         do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
@@ -223,7 +240,7 @@ let ``Update User removes empty attributes`` () =
             {
                 Name = None
                 Token = user.Token
-                PasswordHash = None
+                Password = None
             }
         ]
 
@@ -238,7 +255,7 @@ let ``Update User does not create a new User`` () =
         let newUser: UsersStorage.User = {
             Name = None
             Token = "token"
-            PasswordHash = None
+            Password = None
         }
 
         Assert.ThrowsAsync<ConditionalCheckFailedException>(

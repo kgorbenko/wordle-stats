@@ -9,10 +9,15 @@ open Amazon.DynamoDBv2.Model
 open WordleStats.DataAccess.DynamoDb
 open WordleStats.Common.Utils
 
+type Password = {
+    Hash: string
+    Salt: string
+}
+
 type User = {
     Token: string
     Name: string option
-    PasswordHash: string option
+    Password: Password option
 }
 
 type UserSearchSpecification =
@@ -25,19 +30,36 @@ module UsersSchema =
 
     let tokenAttributeName = "Token"
     let nameAttributeName = "Name"
-    let passwordHashAttributeName = "PasswordHash"
+    let passwordAttributeName = "Password"
+
+    module Password =
+
+        let hashAttributeName = "Hash"
+        let saltAttributeName = "Salt"
 
     let allAttributes = Set [
         tokenAttributeName
         nameAttributeName
-        passwordHashAttributeName
+        passwordAttributeName
+    ]
+
+let private attributeValuesToPassword (attributes: Map<string, AttributeValue>): Password =
+    {
+        Hash = readStringAttribute attributes UsersSchema.Password.hashAttributeName
+        Salt = readStringAttribute attributes UsersSchema.Password.saltAttributeName
+    }
+
+let private attributeValuesFromPassword (password: Password): Map<string, AttributeValue> =
+    Map [
+        UsersSchema.Password.hashAttributeName, getStringAttributeValue password.Hash
+        UsersSchema.Password.saltAttributeName, getStringAttributeValue password.Salt
     ]
 
 let private attributesValuesToUser (attributes: Map<string, AttributeValue>): User =
     {
         Token = readStringAttribute attributes UsersSchema.tokenAttributeName
         Name = readOptionStringAttribute attributes UsersSchema.nameAttributeName
-        PasswordHash = readOptionStringAttribute attributes UsersSchema.passwordHashAttributeName
+        Password = readOptionMapAttribute attributes UsersSchema.passwordAttributeName |> Option.map attributeValuesToPassword
     }
 
 let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
@@ -47,8 +69,8 @@ let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
         if user.Name.IsSome then
             UsersSchema.nameAttributeName, getStringAttributeValue user.Name.Value
 
-        if user.PasswordHash.IsSome then
-            UsersSchema.passwordHashAttributeName, getStringAttributeValue user.PasswordHash.Value
+        if user.Password.IsSome then
+            UsersSchema.passwordAttributeName, user.Password.Value |> attributeValuesFromPassword |> getMapAttributeValue
     ]
 
 type private SetUserAttributeParameters = {
@@ -69,15 +91,15 @@ let rec updateUserAsync
     : unit Task =
     task {
         let updatableAttributesMapping = [
-            UsersSchema.nameAttributeName, "#Name", ":name", _.Name
-            UsersSchema.passwordHashAttributeName, "#PasswordHash", ":passwordHash", _.PasswordHash
+            UsersSchema.nameAttributeName, "#Name", ":name", user.Name.IsSome, (fun () -> user.Name.Value |> getStringAttributeValue)
+            UsersSchema.passwordAttributeName, "#PasswordHash", ":passwordHash", user.Password.IsSome, (fun () -> user.Password.Value |> attributeValuesFromPassword |> getMapAttributeValue)
         ]
 
-        let makeSetParameters attributeName attributeNameAlias attributeValueAlias value =
+        let makeSetParameters attributeName attributeNameAlias attributeValueAlias attributeValueAccessor =
             {
                 Condition = $"{attributeNameAlias} = {attributeValueAlias}"
                 AttributeName = attributeNameAlias, attributeName
-                AttributeValue = attributeValueAlias, value |> getStringAttributeValue
+                AttributeValue = attributeValueAlias, attributeValueAccessor ()
             }
 
         let makeRemoveParameters attributeName attributeNameAlias =
@@ -88,10 +110,10 @@ let rec updateUserAsync
 
         let setParameters, removeParameters =
             updatableAttributesMapping
-            |> partitionMap (fun (name, nameAlias, valueAlias, valueAccessor) ->
-                match user |> valueAccessor with
-                | Some value -> Choice1Of2 (makeSetParameters name nameAlias valueAlias value)
-                | None -> Choice2Of2 (makeRemoveParameters name nameAlias)
+            |> partitionMap (fun (name, nameAlias, valueAlias, isSome, attributeValueAccessor) ->
+                match isSome with
+                | true -> Choice1Of2 (makeSetParameters name nameAlias valueAlias attributeValueAccessor)
+                | false -> Choice2Of2 (makeRemoveParameters name nameAlias)
             )
 
         let updateExpression =
