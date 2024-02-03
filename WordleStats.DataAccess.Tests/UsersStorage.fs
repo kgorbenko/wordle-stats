@@ -249,8 +249,8 @@ let ``Update User`` () =
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
         let newUser: UsersStorage.User = {
-            Name = user.Name
-            Token = "another token"
+            Name = "another name"
+            Token = user.Token
             PinCode = Some 1234
         }
 
@@ -260,8 +260,8 @@ let ``Update User`` () =
 
         let expected: User list = [
             {
-                Name = "name"
-                Token = "another token"
+                Name = "another name"
+                Token = user.Token
                 PinCode = Some "1234"
             }
         ]
@@ -287,8 +287,8 @@ let ``Update User removes PinCode`` () =
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
         let newUser: UsersStorage.User = {
-            Name = user.Name
-            Token = "another token"
+            Name = "another name"
+            Token = user.Token
             PinCode = None
         }
 
@@ -298,8 +298,8 @@ let ``Update User removes PinCode`` () =
 
         let expected: User list = [
             {
-                Name = "name"
-                Token = "another token"
+                Name = "another name"
+                Token = user.Token
                 PinCode = None
             }
         ]

@@ -68,18 +68,18 @@ let rec updateUserAsync
 
         let request = UpdateItemRequest()
         request.TableName <- UsersSchema.tableName
-        request.Key <- Map [ "Name", getStringAttributeValue user.Name ] |> mapToDict
-        request.ConditionExpression <- "attribute_exists(#Name)"
-        request.UpdateExpression <- $"SET #Token = :token {pinCodeExpression}"
+        request.Key <- Map [ UsersSchema.tokenAttributeName, getStringAttributeValue user.Token ] |> mapToDict
+        request.ConditionExpression <- "attribute_exists(#Token)"
+        request.UpdateExpression <- $"SET #Name = :name {pinCodeExpression}"
         request.ExpressionAttributeNames <- Map [
-            "#Name", UsersSchema.nameAttributeName
             "#Token", UsersSchema.tokenAttributeName
+            "#Name", UsersSchema.nameAttributeName
 
             if pinCodeAttribute.IsSome then
                 pinCodeAttribute.Value
         ] |> mapToDict
         request.ExpressionAttributeValues <- Map [
-            ":token", getStringAttributeValue user.Token
+            ":name", getStringAttributeValue user.Name
 
             if pinCodeValue.IsSome then
                 pinCodeValue.Value

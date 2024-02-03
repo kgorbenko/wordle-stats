@@ -17,11 +17,11 @@ module Schemas =
     let createUsersTableAsync (client: AmazonDynamoDBClient): Task<unit> =
         task {
             let keySchemas = [
-                KeySchemaElement(UsersSchema.nameAttributeName, KeyType.HASH)
+                KeySchemaElement(UsersSchema.tokenAttributeName, KeyType.HASH)
             ]
 
             let attributes = [
-                AttributeDefinition(UsersSchema.nameAttributeName, ScalarAttributeType.S)
+                AttributeDefinition(UsersSchema.tokenAttributeName, ScalarAttributeType.S)
             ]
 
             let request = CreateTableRequest(UsersSchema.tableName, keySchemas |> List, attributes |> List, ProvisionedThroughput(3, 3))
@@ -192,7 +192,7 @@ let private getResultsTableKeysToDelete (results: Result list): Map<string, Attr
 let private getUsersTableKeysToDelete (users: User list): Map<string, AttributeValue> list =
     users
     |> Seq.map (fun x -> Map [
-        UsersSchema.nameAttributeName, x.Name |> getStringAttributeValue
+        UsersSchema.tokenAttributeName, x.Token |> getStringAttributeValue
     ])
     |> List.ofSeq
 
