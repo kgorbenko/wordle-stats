@@ -5,7 +5,24 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Configuration.fs" />
+        <Compile Include="Database.fs" />
+        <Compile Include="PasswordHash.fs" />
+        <Compile Include="Handlers\Identity.fs" />
         <Compile Include="Program.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\WordleStats.Common\WordleStats.Common.fsproj" />
+      <ProjectReference Include="..\WordleStats.DataAccess\WordleStats.DataAccess.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentValidation" Version="11.9.0" />
+      <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+      <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.0" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     </ItemGroup>
 
 </Project>
