@@ -1,5 +1,6 @@
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open System
 open System.Diagnostics
@@ -41,9 +42,9 @@ let main args =
                 Environment = webHostEnvironment.EnvironmentName
             }
         )
-    ) |> ignore
+    ).WithTags("Default") |> ignore
 
-    app.MapGroup("auth") |> mapIdentityApi |> ignore
+    app.MapGroup("auth").WithTags("Auth") |> mapIdentityApi
 
     app.UseSwagger() |> ignore
     app.UseSwaggerUI() |> ignore

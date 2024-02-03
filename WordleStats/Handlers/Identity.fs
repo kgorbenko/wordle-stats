@@ -143,8 +143,8 @@ let private loginAsync
                         return Results.BadRequest()
     }
 
-
 let mapIdentityApi (routeBuilder: IEndpointRouteBuilder) =
     routeBuilder.MapPost("/register", RegisterRequestFunc(registerAsync)) |> ignore
     routeBuilder.MapPost("/login", LoginRequestFunc(loginAsync)) |> ignore
+
     ()
