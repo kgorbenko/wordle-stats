@@ -22,6 +22,9 @@ let getNumberAttributeValue (value: int) =
 let readStringAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
     attributes |> Map.find attributeName |> _.S
 
+let readOptionStringAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
+    attributes |> Map.tryFind attributeName |> Option.map _.S
+
 let readNumberAttribute (attributes: Map<string, AttributeValue>) (attributeName: string) =
     attributes |> Map.find attributeName |> (_.N >> Int32.Parse)
 

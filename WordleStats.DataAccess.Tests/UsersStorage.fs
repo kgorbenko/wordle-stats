@@ -21,7 +21,7 @@ let ``Not found by Name substring`` () =
         let user: User = {
             Name = "some user"
             Token = "some token"
-            PinCode = None
+            PasswordHash = None
         }
 
         let snapshot =
@@ -43,15 +43,16 @@ let ``Find User by Name`` () =
         let user: User = {
             Name = "some user"
             Token = "some token"
-            PinCode = Some "1234"
+            PasswordHash = Some "some hash"
         }
 
         let matchingUserName = "matching name"
         let matchingUserToken = "another token"
+        let matchingPasswordHash = Some "another hash"
         let matchingUser: User = {
             Name = matchingUserName
             Token = matchingUserToken
-            PinCode = Some "4321"
+            PasswordHash = matchingPasswordHash
         }
 
         let snapshot =
@@ -63,7 +64,7 @@ let ``Find User by Name`` () =
         let! actual = findUserBySpecificationAsync (ByName matchingUserName) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = matchingUserName; Token = matchingUserToken; PinCode = Some 4321 }
+            Some { Name = matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -76,7 +77,7 @@ let ``Not found by Token substring`` () =
         let user: User = {
             Name = "some user"
             Token = "some token"
-            PinCode = Some "1234"
+            PasswordHash = Some "some hash"
         }
 
         let snapshot =
@@ -98,15 +99,16 @@ let ``Find User by Token`` () =
         let user: User = {
             Name = "some user"
             Token = "some token"
-            PinCode = Some "1234"
+            PasswordHash = Some "some hash"
         }
 
         let matchingUserName = "another name"
         let matchingUserToken = "matching token"
+        let matchingPasswordHash = Some "another hash"
         let matchingUser: User = {
             Name = matchingUserName
             Token = matchingUserToken
-            PinCode = Some "4321"
+            PasswordHash = matchingPasswordHash
         }
 
         let snapshot =
@@ -118,94 +120,13 @@ let ``Find User by Token`` () =
         let! actual = findUserBySpecificationAsync (ByToken matchingUserToken) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = matchingUserName; Token = matchingUserToken; PinCode = Some 4321 }
+            Some { Name = matchingUserName; Token = matchingUserToken; PasswordHash = matchingPasswordHash }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
 
 [<Test>]
-let ``Not found by PinCode substring`` () =
-    task {
-        do! prepareDatabaseAsync |> withTestDbClientAsync
-
-        let user: User = {
-            Name = "some user"
-            Token = "some token"
-            PinCode = Some "1234"
-        }
-
-        let snapshot =
-            Snapshot.create ()
-            |> Snapshot.withUser user
-
-        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
-
-        let! actual = findUserBySpecificationAsync (ByPinCode 123) CancellationToken.None |> withTestDbClientAsync
-
-        Assert.That(actual, Is.EqualTo(None))
-    }
-
-[<Test>]
-let ``Find User by PinCode`` () =
-    task {
-        do! prepareDatabaseAsync |> withTestDbClientAsync
-
-        let user: User = {
-            Name = "some user"
-            Token = "some token"
-            PinCode = Some "1234"
-        }
-
-        let matchingUserName = "another name"
-        let matchingUserToken = "another token"
-
-        let pinCode = 4321
-        let stringPinCode = pinCode |> string
-
-        let matchingUser: User = {
-            Name = matchingUserName
-            Token = matchingUserToken
-            PinCode = Some stringPinCode
-        }
-
-        let snapshot =
-            Snapshot.create ()
-            |> Snapshot.withUsers [user; matchingUser]
-
-        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
-
-        let! actual = findUserBySpecificationAsync (ByPinCode pinCode) CancellationToken.None |> withTestDbClientAsync
-
-        let expected: UsersStorage.User option =
-            Some { Name = matchingUserName; Token = matchingUserToken; PinCode = Some pinCode }
-
-        Assert.That(actual, Is.EqualTo(expected))
-    }
-
-[<Test>]
-let ``Find User by PinCode not found when None`` () =
-    task {
-        do! prepareDatabaseAsync |> withTestDbClientAsync
-
-        let user: User = {
-            Name = "some user"
-            Token = "some token"
-            PinCode = None
-        }
-
-        let snapshot =
-            Snapshot.create ()
-            |> Snapshot.withUsers [user]
-
-        do! insertSnapshotAsync snapshot |> withTestDbClientAsync
-
-        let! actual = findUserBySpecificationAsync (ByPinCode 1234) CancellationToken.None |> withTestDbClientAsync
-
-        Assert.That(actual, Is.EqualTo(None))
-    }
-
-[<Test>]
-let ``Find User By Name no PinCode`` () =
+let ``Find User By Name no Hash`` () =
     task {
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
@@ -214,7 +135,7 @@ let ``Find User By Name no PinCode`` () =
         let user: User = {
             Name = name
             Token = token
-            PinCode = None
+            PasswordHash = None
         }
 
         let snapshot =
@@ -226,7 +147,7 @@ let ``Find User By Name no PinCode`` () =
         let! actual = findUserBySpecificationAsync (ByName name) CancellationToken.None |> withTestDbClientAsync
 
         let expected: UsersStorage.User option =
-            Some { Name = name; Token = token; PinCode = None }
+            Some { Name = name; Token = token; PasswordHash = None }
 
         Assert.That(actual, Is.EqualTo(expected))
     }
@@ -239,7 +160,7 @@ let ``Update User`` () =
         let user: User = {
             Name = "name"
             Token = "token"
-            PinCode = None
+            PasswordHash = None
         }
 
         let snapshot =
@@ -248,10 +169,11 @@ let ``Update User`` () =
 
         do! insertSnapshotAsync snapshot |> withTestDbClientAsync
 
+        let newHash = Some "some hash"
         let newUser: UsersStorage.User = {
             Name = "another name"
             Token = user.Token
-            PinCode = Some 1234
+            PasswordHash = newHash
         }
 
         do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
@@ -262,7 +184,7 @@ let ``Update User`` () =
             {
                 Name = "another name"
                 Token = user.Token
-                PinCode = Some "1234"
+                PasswordHash = newHash
             }
         ]
 
@@ -270,14 +192,14 @@ let ``Update User`` () =
     }
 
 [<Test>]
-let ``Update User removes PinCode`` () =
+let ``Update User removes Hash`` () =
     task {
         do! prepareDatabaseAsync |> withTestDbClientAsync
 
         let user: User = {
             Name = "name"
             Token = "token"
-            PinCode = Some "1234"
+            PasswordHash = Some "some hash"
         }
 
         let snapshot =
@@ -289,7 +211,7 @@ let ``Update User removes PinCode`` () =
         let newUser: UsersStorage.User = {
             Name = "another name"
             Token = user.Token
-            PinCode = None
+            PasswordHash = None
         }
 
         do! updateUserAsync newUser CancellationToken.None |> withTestDbClientAsync
@@ -300,7 +222,7 @@ let ``Update User removes PinCode`` () =
             {
                 Name = "another name"
                 Token = user.Token
-                PinCode = None
+                PasswordHash = None
             }
         ]
 
@@ -315,7 +237,7 @@ let ``Update User does not create a new User`` () =
         let newUser: UsersStorage.User = {
             Name = "test"
             Token = "token"
-            PinCode = None
+            PasswordHash = None
         }
 
         Assert.ThrowsAsync<ConditionalCheckFailedException>(

@@ -12,13 +12,12 @@ open WordleStats.Common.Utils
 type User = {
     Name: string
     Token: string
-    PinCode: int option
+    PasswordHash: string option
 }
 
 type UserSearchSpecification =
     | ByName of Name: string
     | ByToken of Token: string
-    | ByPinCode of PinCode: int
 
 module UsersSchema =
 
@@ -26,19 +25,19 @@ module UsersSchema =
 
     let nameAttributeName = "Name"
     let tokenAttributeName = "Token"
-    let pinCodeAttributeName = "PinCode"
+    let passwordHashAttributeName = "PasswordHash"
 
     let allAttributes = Set [
         nameAttributeName
         tokenAttributeName
-        pinCodeAttributeName
+        passwordHashAttributeName
     ]
 
 let private attributesValuesToUser (attributes: Map<string, AttributeValue>): User =
     {
         Name = readStringAttribute attributes UsersSchema.nameAttributeName
         Token = readStringAttribute attributes UsersSchema.tokenAttributeName
-        PinCode = readOptionNumberAttribute attributes UsersSchema.pinCodeAttributeName
+        PasswordHash = readOptionStringAttribute attributes UsersSchema.passwordHashAttributeName
     }
 
 let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
@@ -46,8 +45,8 @@ let private attributeValuesFromUser (user: User): Map<string, AttributeValue> =
         UsersSchema.nameAttributeName, getStringAttributeValue user.Name
         UsersSchema.tokenAttributeName, getStringAttributeValue user.Token
 
-        if user.PinCode.IsSome then
-            UsersSchema.pinCodeAttributeName, getNumberAttributeValue user.PinCode.Value
+        if user.PasswordHash.IsSome then
+            UsersSchema.passwordHashAttributeName, getStringAttributeValue user.PasswordHash.Value
     ]
 let rec updateUserAsync
     (user: User)
@@ -55,34 +54,34 @@ let rec updateUserAsync
     (client: AmazonDynamoDBClient)
     : unit Task =
     task {
-        let pinCodeExpression, pinCodeAttribute, pinCodeValue =
-            match user.PinCode with
-            | Some pinCode ->
-                ", #PinCode = :pinCode",
-                Some ("#PinCode", UsersSchema.pinCodeAttributeName),
-                Some (":pinCode", getNumberAttributeValue pinCode)
+        let passwordHashExpression, passwordHashAttribute, passwordHashValue =
+            match user.PasswordHash with
+            | Some hash ->
+                ", #PasswordHash = :passwordHash",
+                Some ("#PasswordHash", UsersSchema.passwordHashAttributeName),
+                Some (":passwordHash", getStringAttributeValue hash)
             | None ->
-                "REMOVE #PinCode",
-                Some ("#PinCode", UsersSchema.pinCodeAttributeName),
+                "REMOVE #PasswordHash",
+                Some ("#PasswordHash", UsersSchema.passwordHashAttributeName),
                 None
 
         let request = UpdateItemRequest()
         request.TableName <- UsersSchema.tableName
         request.Key <- Map [ UsersSchema.tokenAttributeName, getStringAttributeValue user.Token ] |> mapToDict
         request.ConditionExpression <- "attribute_exists(#Token)"
-        request.UpdateExpression <- $"SET #Name = :name {pinCodeExpression}"
+        request.UpdateExpression <- $"SET #Name = :name {passwordHashExpression}"
         request.ExpressionAttributeNames <- Map [
             "#Token", UsersSchema.tokenAttributeName
             "#Name", UsersSchema.nameAttributeName
 
-            if pinCodeAttribute.IsSome then
-                pinCodeAttribute.Value
+            if passwordHashAttribute.IsSome then
+                passwordHashAttribute.Value
         ] |> mapToDict
         request.ExpressionAttributeValues <- Map [
             ":name", getStringAttributeValue user.Name
 
-            if pinCodeValue.IsSome then
-                pinCodeValue.Value
+            if passwordHashValue.IsSome then
+                passwordHashValue.Value
         ] |> mapToDict
 
         let! response = client.UpdateItemAsync(request, cancellationToken)
@@ -106,7 +105,6 @@ let rec findUserBySpecificationAsync
             match specification with
             | ByName n -> UsersSchema.nameAttributeName, getStringAttributeValue n
             | ByToken t -> UsersSchema.tokenAttributeName, getStringAttributeValue t
-            | ByPinCode pc -> UsersSchema.pinCodeAttributeName, getNumberAttributeValue pc
 
         let request = ScanRequest(UsersSchema.tableName)
         request.FilterExpression <- filterExpression

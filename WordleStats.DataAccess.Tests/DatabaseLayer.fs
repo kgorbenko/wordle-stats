@@ -83,6 +83,9 @@ let private getNumberAttributeValue (value: string) =
 let private readString (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.find attributeName |> _.S
 
+let private readOptionString (attributeName: string) (attributes: Map<string, AttributeValue>) =
+    attributes |> Map.tryFind attributeName |> Option.map _.S
+
 let private readNumber (attributeName: string) (attributes: Map<string, AttributeValue>) =
     attributes |> Map.find attributeName |> _.N
 
@@ -102,7 +105,7 @@ let private toUser (attributes: Map<string, AttributeValue>): User =
     {
         Name = readString UsersSchema.nameAttributeName attributes
         Token = readString UsersSchema.tokenAttributeName attributes
-        PinCode = readOptionNumber UsersSchema.pinCodeAttributeName attributes
+        PasswordHash = readOptionString UsersSchema.passwordHashAttributeName attributes
     }
 
 let getAllResultsAsync (client: AmazonDynamoDBClient): Task<Result list> =
@@ -167,8 +170,8 @@ let insertUsersAsync (users: User list) (client: AmazonDynamoDBClient) =
                 UsersSchema.nameAttributeName, x.Name |> getStringAttributeValue
                 UsersSchema.tokenAttributeName, x.Token |> getStringAttributeValue
 
-                if x.PinCode.IsSome then
-                    UsersSchema.pinCodeAttributeName, x.PinCode.Value |> getNumberAttributeValue
+                if x.PasswordHash.IsSome then
+                    UsersSchema.passwordHashAttributeName, x.PasswordHash.Value |> getStringAttributeValue
             ])
             |> Seq.map mapToDict
             |> Seq.map (PutRequest >> WriteRequest)
