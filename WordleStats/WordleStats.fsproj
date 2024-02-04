@@ -8,7 +8,9 @@
         <Compile Include="Configuration.fs" />
         <Compile Include="Database.fs" />
         <Compile Include="PasswordHash.fs" />
+        <Compile Include="Result.fs" />
         <Compile Include="Handlers\Identity.fs" />
+        <Compile Include="Handlers\Results.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
@@ -23,6 +25,10 @@
       <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.0" />
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
       <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="$(AssemblyName).Tests" />
     </ItemGroup>
 
 </Project>

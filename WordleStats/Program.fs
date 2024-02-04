@@ -8,6 +8,7 @@ open System.Diagnostics
 open WordleStats
 open WordleStats.Configuration
 open WordleStats.Handlers.Identity
+open WordleStats.Handlers.Results
 
 type ApplicationStatus = {
     Name: string
@@ -45,6 +46,8 @@ let main args =
     ).WithTags("Default") |> ignore
 
     app.MapGroup("auth").WithTags("Auth") |> mapIdentityApi
+
+    app.MapGroup("results").WithTags("Results") |> mapResultsApi
 
     app.UseSwagger() |> ignore
     app.UseSwaggerUI() |> ignore
