@@ -18,6 +18,8 @@ open WordleStats.Results
 
 [<Literal>]
 let UnattemptedValue = -2
+
+[<Literal>]
 let FailedValue = -1
 
 type WordleResult =
@@ -62,10 +64,37 @@ type PostResultResponse = {
     TotalScore: int
 }
 
+type GetResultsByDateRequest = {
+    Token: string
+    Date: DateOnly
+    UserFilter: string
+}
+
+type ByDateResult = {
+    User: string
+    Wordle: WordleResult
+    WorldleResult: WorldleResult
+    WaffleResult: WaffleResult
+}
+
+type GetResultsResponse = {
+    Results: ByDateResult list
+}
+
 type PostResultRequestFunc =
     Func<
         IOptions<WordleStats.DynamoDbConfiguration>,
         PostResultRequest,
+        CancellationToken,
+        Task<IResult>
+    >
+
+type GetResultsByDateRequestFunc =
+    Func<
+        IOptions<WordleStats.DynamoDbConfiguration>,
+        string,
+        DateOnly,
+        string,
         CancellationToken,
         Task<IResult>
     >
@@ -82,10 +111,21 @@ module private Validators =
             base.RuleFor(fun x -> x.Worldle).IsInEnum() |> ignore
             base.RuleFor(fun x -> x.Waffle).IsInEnum() |> ignore
 
+    type GetResultsRequestValidator() =
+        inherit AbstractValidator<GetResultsByDateRequest>()
+
+        do
+            base.RuleFor(fun x -> x.Token).NotEmpty() |> ignore
+            base.RuleFor(fun x -> x.Date).NotEmpty() |> ignore
+
     let private postResultRequestValidator = PostResultRequestValidator()
+    let private getResultsRequestValidator = GetResultsRequestValidator()
 
     let validatePostResultRequest (request: PostResultRequest) =
         postResultRequestValidator.Validate request
+
+    let validateGetResultsRequest (request: GetResultsByDateRequest) =
+        getResultsRequestValidator.Validate request
 
 let private mapWordleResult (result: WordleResult): Results.WordleResult =
     match result with
@@ -141,6 +181,55 @@ let private toPersistentWaffleScore (wordleResult: Results.WaffleResult) =
     | Results.WaffleResult.Failed -> FailedValue
     | Results.WaffleResult.Solved score -> score
 
+module ApiMapping =
+
+    let toApiWordleResult (score: int option): WordleResult =
+        match score with
+        | None
+        | Some UnattemptedValue -> WordleResult.Unattempted
+        | Some FailedValue -> WordleResult.Failed
+        | Some 1 -> WordleResult.Scored1
+        | Some 2 -> WordleResult.Scored2
+        | Some 3 -> WordleResult.Scored3
+        | Some 4 -> WordleResult.Scored4
+        | Some 5 -> WordleResult.Scored5
+        | Some 6 -> WordleResult.Scored6
+        | _ -> failwith $"Unexpected Wordle score: {score}"
+
+    let toApiWorldleResult (score: int option): WorldleResult =
+        match score with
+        | None
+        | Some UnattemptedValue -> WorldleResult.Unattempted
+        | Some FailedValue -> WorldleResult.Failed
+        | Some 1 -> WorldleResult.Scored1
+        | Some 2 -> WorldleResult.Scored2
+        | Some 3 -> WorldleResult.Scored3
+        | Some 4 -> WorldleResult.Scored4
+        | Some 5 -> WorldleResult.Scored5
+        | Some 6 -> WorldleResult.Scored6
+        | _ -> failwith $"Unexpected Worldle score: {score}"
+
+    let toApiWaffleResult (score: int option): WaffleResult =
+        match score with
+        | None
+        | Some UnattemptedValue -> WaffleResult.Unattempted
+        | Some FailedValue -> WaffleResult.Failed
+        | Some 0 -> WaffleResult.Scored0
+        | Some 1 -> WaffleResult.Scored1
+        | Some 2 -> WaffleResult.Scored2
+        | Some 3 -> WaffleResult.Scored3
+        | Some 4 -> WaffleResult.Scored4
+        | Some 5 -> WaffleResult.Scored5
+        | _ -> failwith $"Unexpected Worldle score: {score}"
+
+    let toApiByDateResult (result: Result): ByDateResult =
+        {
+            User = result.User
+            Wordle = toApiWordleResult result.Wordle
+            WorldleResult = toApiWorldleResult result.Worldle
+            WaffleResult = toApiWaffleResult result.Waffle
+        }
+
 let private postResultAsync
     (dynamoDbConfiguration: IOptions<WordleStats.DynamoDbConfiguration>)
     (request: PostResultRequest)
@@ -187,6 +276,54 @@ let private postResultAsync
                 return Results.Ok(response)
     }
 
+let private getResultsByDateAsync
+    (dynamoDbConfiguration: IOptions<WordleStats.DynamoDbConfiguration>)
+    (token: string)
+    (date: DateOnly)
+    (userFilter: string)
+    (cancellationToken: CancellationToken)
+    : Task<IResult> =
+    task {
+        let request: GetResultsByDateRequest = { Token = token; Date = date; UserFilter = userFilter }
+        let validationResult = Validators.validateGetResultsRequest request
+
+        if not validationResult.IsValid then
+            return Results.ValidationProblem(validationResult.ToDictionary())
+        else
+            let configuration = makeConfiguration dynamoDbConfiguration.Value
+
+            let! userByToken =
+                findUserBySpecificationAsync (ByToken request.Token) cancellationToken
+                |> withDbClientAsync configuration
+
+            if userByToken.IsNone || userByToken.Value.Name.IsNone || userByToken.Value.Password.IsNone then
+                return Results.BadRequest()
+            else
+                let byDateSpecification: ByDateSearchSpecification = {
+                    Date = request.Date
+                    User = request.UserFilter |> Option.ofObj
+                }
+
+                let! results =
+                    findResultsByDateSpecificationAsync byDateSpecification cancellationToken
+                    |> withDbClientAsync configuration
+
+                let byDateResults =
+                    results |> Seq.map ApiMapping.toApiByDateResult |> List.ofSeq
+
+                return Results.Ok({ Results = byDateResults })
+    }
+
 let mapResultsApi (routeBuilder: IEndpointRouteBuilder) =
+    routeBuilder.MapGet("/by-date", GetResultsByDateRequestFunc(
+        fun dynamoDbConfiguration
+            token
+            date
+            userFilter
+            cancellationToken -> getResultsByDateAsync dynamoDbConfiguration token date userFilter cancellationToken
+        )
+    ) |> ignore
+
     routeBuilder.MapPost("", PostResultRequestFunc(postResultAsync)) |> ignore
+
     ()
