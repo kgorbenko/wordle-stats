@@ -1,6 +1,10 @@
-﻿#root {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
-    text-align: center;
+﻿.application {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content:  center;
+}
+
+.application .center-header {
+    font-size: 2.5rem;
 }

@@ -1,11 +1,7 @@
+import * as React from 'react';
 import './App.css';
 
-function App() {
-    return (
-        <div>
-            <h1 id="tabelLabel">Wordle Stats</h1>
-        </div>
-    );
-}
-
-export default App;
+export const App: React.FC = () =>
+    <div className="application">
+        <h1 className="center-header">Wordle Stats</h1>
+    </div>;
