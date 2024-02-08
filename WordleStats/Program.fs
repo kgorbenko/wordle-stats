@@ -2,6 +2,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open System
 open System.Diagnostics
 
@@ -38,6 +39,8 @@ let main args =
     app.UseDefaultFiles() |> ignore
     app.UseStaticFiles() |> ignore
 
+    app.UseHttpsRedirection() |> ignore
+
     app.MapGet("/status", Func<IWebHostEnvironment, ApplicationStatus>(
         fun (webHostEnvironment: IWebHostEnvironment) ->
             {
@@ -54,8 +57,9 @@ let main args =
 
     app.MapFallbackToFile("/index.html") |> ignore
 
-    app.UseSwagger() |> ignore
-    app.UseSwaggerUI() |> ignore
+    if app.Environment.IsDevelopment() then
+        app.UseSwagger() |> ignore
+        app.UseSwaggerUI() |> ignore
 
     app.Run()
 
