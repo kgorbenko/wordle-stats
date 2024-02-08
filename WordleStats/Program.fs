@@ -35,6 +35,9 @@ let main args =
 
     let app = builder.Build()
 
+    app.UseDefaultFiles() |> ignore
+    app.UseStaticFiles() |> ignore
+
     app.MapGet("/status", Func<IWebHostEnvironment, ApplicationStatus>(
         fun (webHostEnvironment: IWebHostEnvironment) ->
             {
@@ -48,6 +51,8 @@ let main args =
     app.MapGroup("auth").WithTags("Auth") |> mapIdentityApi
 
     app.MapGroup("results").WithTags("Results") |> mapResultsApi
+
+    app.MapFallbackToFile("/index.html") |> ignore
 
     app.UseSwagger() |> ignore
     app.UseSwaggerUI() |> ignore

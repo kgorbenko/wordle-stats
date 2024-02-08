@@ -2,6 +2,9 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <SpaRoot>..\WordleStats.Client</SpaRoot>
+        <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
+        <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,6 +18,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\WordleStats.Client\wordle-stats.client.esproj">
+          <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      </ProjectReference>
       <ProjectReference Include="..\WordleStats.Common\WordleStats.Common.fsproj" />
       <ProjectReference Include="..\WordleStats.DataAccess\WordleStats.DataAccess.fsproj" />
     </ItemGroup>
@@ -24,6 +30,7 @@
       <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
       <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.0" />
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="8.0.1" />
       <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     </ItemGroup>
 
