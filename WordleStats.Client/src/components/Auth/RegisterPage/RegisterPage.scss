@@ -1,9 +1,9 @@
-﻿.login-page {
+﻿.register-page {
     display: flex;
     flex-flow: column nowrap;
     gap: 25px;
 
-    .login-error {
+    .register-error {
         visibility: hidden;
 
         &.visible {

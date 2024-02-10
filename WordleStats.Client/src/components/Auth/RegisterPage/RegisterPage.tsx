@@ -1,64 +1,66 @@
 ﻿import * as React from 'react';
 import classNames from 'classnames';
 import { createSearchParams, Link as RouterLink, useFetcher, useSearchParams } from 'react-router-dom';
-import { Alert, Link, Stack, TextField, Typography } from '@mui/material';
-import { ILoginActionData, ILoginFormData, loginFormDataValidationSchema } from './formData.ts';
+import { Alert, Stack, TextField, Typography, Link } from '@mui/material';
+import { IRegisterActionData, IRegisterFormData, registerFormDataValidationSchema } from './formData.ts';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { LoadingButton } from '@mui/lab';
-import { registerRoute } from '../../../routing/routes.ts';
+import { loginRoute } from '../../../routing/routes.ts';
 
-import './LoginPage.scss';
+import './RegisterPage.scss';
 
-function makeRegisterLink(from: string | undefined) {
+function makeLoginLink(from: string | undefined) {
     if (from === undefined) {
-        return registerRoute;
+        return loginRoute;
     }
 
     const searchParams = createSearchParams({
         from: from
     });
 
-    return `${registerRoute}?${searchParams}`
+    return `${loginRoute}?${searchParams}`;
 }
 
-export const LoginPage: React.FC = () => {
+export const RegisterPage: React.FC = () => {
     const [params] = useSearchParams();
     const from = params.get("from") ?? undefined;
 
     const fetcher = useFetcher();
 
     const isSubmitting = fetcher.state === 'submitting';
-    const fetcherData: ILoginActionData | undefined = fetcher.data;
+    const fetcherData: IRegisterActionData | undefined = fetcher.data;
 
     const {
         register,
         handleSubmit,
         formState
-    } = useForm<ILoginFormData>({
-        resolver: yupResolver(loginFormDataValidationSchema),
+    } = useForm<IRegisterFormData>({
+        resolver: yupResolver(registerFormDataValidationSchema),
         disabled: isSubmitting
     });
 
     const onSubmit = React.useCallback(
-        (formData: ILoginFormData) => {
+        (formData: IRegisterFormData) => {
             fetcher.submit(JSON.stringify(formData), { method: 'POST', encType: "application/json" });
         },
         [fetcher]
     );
 
+    const tokenMessage = formState.errors.token?.message;
     const userNameMessage = formState.errors.userName?.message;
     const passwordMessage = formState.errors.password?.message;
+    const confirmPasswordMessage = formState.errors.confirmPassword?.message;
 
     return (
-        <div className="login-page">
+        <div className="register-page">
             {
                 <Alert
                     severity="error"
                     className={classNames(
-                        'login-error', {
-                        'visible': fetcherData !== undefined && !isSubmitting
-                    })}
+                        'register-error', {
+                            'visible': fetcherData !== undefined && !isSubmitting
+                        })}
                 >
                     {fetcherData?.message ?? ' '}
                 </Alert>
@@ -76,6 +78,13 @@ export const LoginPage: React.FC = () => {
                     spacing={2}
                 >
                     <TextField
+                        {...register('token')}
+                        label="Token"
+                        helperText={tokenMessage ?? ' '}
+                        error={tokenMessage !== undefined}
+                        fullWidth
+                    />
+                    <TextField
                         {...register('userName')}
                         label="Login"
                         helperText={userNameMessage ?? ' '}
@@ -90,18 +99,27 @@ export const LoginPage: React.FC = () => {
                         error={passwordMessage !== undefined}
                         fullWidth
                     />
+                    <TextField
+                        {...register('confirmPassword')}
+                        label="Password"
+                        type="password"
+                        helperText={confirmPasswordMessage ?? ' '}
+                        error={confirmPasswordMessage !== undefined}
+                        fullWidth
+                    />
                     <LoadingButton
                         type="submit"
                         variant="contained"
                         loading={isSubmitting}
                         disabled={isSubmitting}
                     >
-                        Sign In
+                        Sign Up
                     </LoadingButton>
                     <Typography variant="body2">
-                        Don't have an account? <Link component={RouterLink} to={makeRegisterLink(from)} replace>Sign up</Link>
+                        Already have an account? <Link component={RouterLink} to={makeLoginLink(from)} replace>Sign in</Link>
                     </Typography>
                 </Stack>
             </form>
-        </div>);
+        </div>
+    );
 }

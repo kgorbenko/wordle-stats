@@ -89,7 +89,7 @@ let private registerAsync
                 findUserBySpecificationAsync (ByToken request.Token) cancellationToken
                 |> withDbClientAsync configuration
 
-            if userByToken.IsNone then
+            if userByToken.IsNone || userByToken.Value.Name.IsSome || userByToken.Value.Password.IsSome then
                 return Results.BadRequest()
             else
                 let! hashedPassword = PasswordHash.generateAsync request.Password
