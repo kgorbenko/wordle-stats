@@ -1,10 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import * as React from 'react';
+import { createRoot } from 'react-dom/client';
+import { App } from './App';
+import { assertNonNullable } from './utils';
+import { ApplicationContextProvider } from './components/ApplicationContextProvider';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+import './index.css';
+
+const rootElement = document.getElementById('root');
+assertNonNullable(rootElement);
+
+const root = createRoot(rootElement);
+
+root.render(
+    <React.StrictMode>
+        <ApplicationContextProvider>
+            <App />
+        </ApplicationContextProvider>
+    </React.StrictMode>
+);

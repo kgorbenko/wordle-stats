@@ -25,6 +25,11 @@ type LoginRequest = {
     Password: string
 }
 
+type LoginResponse = {
+    Token: string
+    UserName: string
+}
+
 type RegisterRequestFunc =
     Func<
         IOptions<WordleStats.DynamoDbConfiguration>,
@@ -101,7 +106,12 @@ let private registerAsync
                     updateUserAsync user cancellationToken
                     |> withDbClientAsync configuration
 
-                return Results.Ok(userByToken.Value.Token)
+                let response = {
+                    Token = userByToken.Value.Token
+                    UserName = user.Name.Value
+                }
+
+                return Results.Ok(response)
     }
 
 let private toHashedPassword (password: Password): PasswordHash.HashedPassword =
@@ -138,7 +148,11 @@ let private loginAsync
                     let! isPasswordCorrect = PasswordHash.verifyAsync request.Password currentPassword
 
                     if isPasswordCorrect then
-                        return Results.Ok(userByUsername.Value.Token)
+                        let response = {
+                            Token = userByUsername.Value.Token
+                            UserName = userByUsername.Value.Name.Value
+                        }
+                        return Results.Ok(response)
                     else
                         return Results.BadRequest()
     }
