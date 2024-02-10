@@ -1,32 +1,91 @@
 ﻿import * as React from 'react';
-import { Form, useActionData, useLocation, useNavigation } from 'react-router-dom';
-import { homeRoute } from '../../../routing/routes.ts';
+import classNames from 'classnames';
+import { useFetcher, useSearchParams } from 'react-router-dom';
+import { Alert, Stack, TextField } from '@mui/material';
+import { ILoginActionData, ILoginFormData, loginFormDataValidationSchema } from './formData.ts';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { LoadingButton } from '@mui/lab';
+
+import './LoginPage.scss';
 
 export const LoginPage: React.FC = () => {
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const from = params.get("from") || homeRoute;
+    const [params] = useSearchParams();
+    const from = params.get("from") ?? undefined;
 
-    const navigation = useNavigation();
-    const isLoggingIn = navigation.formData?.get("username") != null;
-    const actionData = useActionData() as { error: string } | undefined;
+    const fetcher = useFetcher();
+
+    const isSubmitting = fetcher.state === 'submitting';
+    const fetcherData: ILoginActionData | undefined = fetcher.data;
+
+    const {
+        register,
+        handleSubmit,
+        formState
+    } = useForm<ILoginFormData>({
+        resolver: yupResolver(loginFormDataValidationSchema),
+        disabled: isSubmitting
+    });
+
+    const onSubmit = React.useCallback(
+        (formData: ILoginFormData) => {
+            fetcher.submit(JSON.stringify(formData), { method: 'POST', encType: "application/json" });
+        },
+        [fetcher]
+    );
+
+    const userNameMessage = formState.errors.userName?.message;
+    const passwordMessage = formState.errors.password?.message;
 
     return (
-        <div>
-            <p>You must log in to view the page at {from}</p>
+        <div className="login-page">
+            {
+                <Alert
+                    severity="error"
+                    className={classNames(
+                        'login-error', {
+                        'visible': fetcherData !== undefined && !isSubmitting
+                    })}
+                >
+                    {fetcherData?.message ?? ' '}
+                </Alert>
+            }
 
-            <Form method="post" replace>
-                <input type="hidden" name="redirectTo" value={from} />
-                <label>
-                    Username: <input name="username" />
-                </label>{" "}
-                <button type="submit" disabled={isLoggingIn}>
-                    {isLoggingIn ? "Logging in..." : "Login"}
-                </button>
-                {actionData && actionData.error ? (
-                    <p style={{ color: "red" }}>{actionData.error}</p>
-                ) : null}
-            </Form>
-        </div>
-    );
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <input
+                    {...register('redirectTo')}
+                    type="hidden"
+                    value={from}
+                />
+
+                <Stack
+                    direction="column"
+                    spacing={2}
+                >
+                    <TextField
+                        {...register('userName')}
+                        label="Login"
+                        helperText={userNameMessage ?? ' '}
+                        error={userNameMessage !== undefined}
+                        fullWidth
+                    />
+                    <TextField
+                        {...register('password')}
+                        label="Password"
+                        type="password"
+                        helperText={passwordMessage ?? ' '}
+                        error={passwordMessage !== undefined}
+                        fullWidth
+                    />
+                    <LoadingButton
+                        type="submit"
+                        variant="contained"
+                        loading={isSubmitting}
+                        disabled={isSubmitting}
+                    >
+                        Sign In
+                    </LoadingButton>
+                </Stack>
+            </form>
+        </div>);
 }

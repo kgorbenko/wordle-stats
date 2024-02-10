@@ -1,0 +1,18 @@
+﻿.unauthenticated-layout {
+    min-height: 100vh;
+
+    display: flex;
+    flex-flow: column nowrap;
+
+    align-items: center;
+
+    .header-section {
+        margin-top: 150px;
+        margin-bottom: 40px;
+    }
+
+    .content-area {
+        max-width: 400px;
+        width: 100%;
+    }
+}

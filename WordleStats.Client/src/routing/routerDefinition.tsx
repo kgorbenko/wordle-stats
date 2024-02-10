@@ -9,6 +9,7 @@ import { loginLoader } from '../components/Auth/LoginPage/loader.ts';
 import { LoginPage } from '../components/Auth/LoginPage/LoginPage.tsx';
 import { logoutAction } from '../components/Auth/actions.ts';
 import { ErrorPage } from '../components/ErrorPage.tsx';
+import { UnauthenticatedLayout } from '../components/Auth/UnauthenticatedLayout.tsx';
 
 const routerDefinition = (applicationContext: IApplicationContext) => createBrowserRouter([
     {
@@ -24,14 +25,20 @@ const routerDefinition = (applicationContext: IApplicationContext) => createBrow
         ],
     },
     {
-        path: loginRoute,
-        action: loginAction(applicationContext),
-        loader: loginLoader(applicationContext),
-        Component: LoginPage,
-    },
-    {
-        path: logoutRoute,
-        action: logoutAction(applicationContext)
+        Component: UnauthenticatedLayout,
+        ErrorBoundary: ErrorPage,
+        children: [
+            {
+                path: loginRoute,
+                action: loginAction(applicationContext),
+                loader: loginLoader(applicationContext),
+                Component: LoginPage
+            },
+            {
+                path: logoutRoute,
+                action: logoutAction(applicationContext)
+            }
+        ]
     }
 ]);
 

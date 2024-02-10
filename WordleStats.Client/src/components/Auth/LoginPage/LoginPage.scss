@@ -1,0 +1,15 @@
+﻿.login-page {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 25px;
+
+    text-align: center;
+
+    .login-error {
+        visibility: hidden;
+
+        &.visible {
+            visibility: visible;
+        }
+    }
+}

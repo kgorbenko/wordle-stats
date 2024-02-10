@@ -1,19 +1,27 @@
 ﻿import { LoaderFunctionArgs, redirect } from 'react-router-dom';
 import { IApplicationContext } from '../../../ApplicationContext.ts';
 import { homeRoute } from '../../../routing/routes.ts';
+import { ILoginActionData, ILoginFormData } from './formData.ts';
+import { ILoginRequest, loginAsync } from '../../../serverClient.ts';
 
 export const loginAction = (context: IApplicationContext) => async ({ request }: LoaderFunctionArgs) => {
-    const formData = await request.formData();
-    const username = formData.get("username") as string | null;
+    const formData: ILoginFormData = await request.json();
 
-    if (!username) {
-        return {
-            error: "You must provide a username to log in",
-        };
+    const loginRequest: ILoginRequest = {
+        userName: formData.userName,
+        password: formData.password
     }
 
-    context.setUser({ userName: username, token: username });
+    const result = await loginAsync(loginRequest);
 
-    const redirectTo = formData.get("redirectTo") as string | null;
-    return redirect(redirectTo || homeRoute);
+    if (result !== undefined) {
+        context.setUser({ userName: result.userName, token: result.token });
+        return redirect(formData.redirectTo ?? homeRoute);
+    }
+
+    const error: ILoginActionData = {
+        message: 'Invalid login or password'
+    };
+
+    return error;
 }

@@ -11,6 +11,8 @@ open WordleStats.Configuration
 open WordleStats.Handlers.Identity
 open WordleStats.Handlers.Results
 
+let allowSpaProxyPolicy = "AllowSPAProxy"
+
 type ApplicationStatus = {
     Name: string
     Version: string
@@ -34,6 +36,15 @@ let main args =
     builder.Services.AddEndpointsApiExplorer() |> ignore
     builder.Services.AddSwaggerGen() |> ignore
 
+    builder.Services.AddCors(fun options ->
+        options.AddPolicy(allowSpaProxyPolicy, (fun x ->
+            x.WithOrigins("https://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod() |> ignore
+            )
+        )
+    ) |> ignore
+
     let app = builder.Build()
 
     app.UseDefaultFiles() |> ignore
@@ -41,25 +52,30 @@ let main args =
 
     app.UseHttpsRedirection() |> ignore
 
-    app.MapGet("/status", Func<IWebHostEnvironment, ApplicationStatus>(
-        fun (webHostEnvironment: IWebHostEnvironment) ->
-            {
-                Name = webHostEnvironment.ApplicationName
-                Version = getVersion ()
-                Environment = webHostEnvironment.EnvironmentName
-            }
-        )
-    ).WithTags("Default") |> ignore
+    app.MapGroup("/api")
+    |> (fun builder ->
 
-    app.MapGroup("auth").WithTags("Auth") |> mapIdentityApi
+        builder.MapGet("/status", Func<IWebHostEnvironment, ApplicationStatus>(
+            fun (webHostEnvironment: IWebHostEnvironment) ->
+                {
+                    Name = webHostEnvironment.ApplicationName
+                    Version = getVersion ()
+                    Environment = webHostEnvironment.EnvironmentName
+                }
+            )
+        ).WithTags("Default") |> ignore
 
-    app.MapGroup("results").WithTags("Results") |> mapResultsApi
+        builder.MapGroup("/auth").WithTags("Auth") |> mapIdentityApi
+
+        builder.MapGroup("/results").WithTags("Results") |> mapResultsApi
+    )
 
     app.MapFallbackToFile("/index.html") |> ignore
 
     if app.Environment.IsDevelopment() then
         app.UseSwagger() |> ignore
         app.UseSwaggerUI() |> ignore
+        app.UseCors("AllowSPAProxy") |> ignore
 
     app.Run()
 

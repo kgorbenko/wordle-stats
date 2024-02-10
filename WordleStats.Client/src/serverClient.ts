@@ -14,33 +14,34 @@ export interface ILoginResponse {
     readonly userName: string;
 }
 
-const registerUrl = '/api/auth/register';
-const loginUrl = '/api/auth/login';
+const registerUrl = 'https://localhost:5001/api/auth/register';
+const loginUrl = 'https://localhost:5001/api/auth/login';
 
-export async function registerAsync(request: IRegisterRequest): Promise<ILoginResponse | undefined> {
-    return await tryMakePostRequestAsync(registerUrl, request);
+export async function registerAsync(request: IRegisterRequest, signal?: AbortSignal): Promise<ILoginResponse | undefined> {
+    return await tryMakePostRequestAsync(registerUrl, request, signal);
 }
 
-export async function loginAsync(request: ILoginRequest): Promise<ILoginResponse | undefined> {
-    return await tryMakePostRequestAsync(loginUrl, request);
+export async function loginAsync(request: ILoginRequest, signal?: AbortSignal): Promise<ILoginResponse | undefined> {
+    return await tryMakePostRequestAsync(loginUrl, request, signal);
 }
 
-async function tryMakePostRequestAsync<TBody extends object, TResponse>(url: string, body?: TBody): Promise<TResponse | undefined> {
+async function tryMakePostRequestAsync<TBody extends object, TResponse>(url: string, body?: TBody, signal?: AbortSignal): Promise<TResponse | undefined> {
     try {
-        return await makePostRequestAsync(url, body);
+        return await makePostRequestAsync(url, body, signal);
     } catch (e) {
         console.error(e);
         return undefined;
     }
 }
 
-async function makePostRequestAsync<TBody extends object, TResponse>(url: string, body?: TBody): Promise<TResponse | undefined> {
+async function makePostRequestAsync<TBody extends object, TResponse>(url: string, body?: TBody, signal?: AbortSignal): Promise<TResponse | undefined> {
     const response = await fetch(url, {
         method: 'POST',
         body: body !== undefined ? JSON.stringify(body) : undefined,
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        signal: signal
     });
 
     return response.ok

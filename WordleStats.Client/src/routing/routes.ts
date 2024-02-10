@@ -1,5 +1,7 @@
 ﻿export const homeRoute = '/';
 
-export const loginRoute = '/auth/login';
+const authRoute = '/auth';
 
-export const logoutRoute = '/auth/logout';
+export const loginRoute = authRoute + '/login';
+
+export const logoutRoute = authRoute + '/logout';
